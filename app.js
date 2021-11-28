@@ -75,6 +75,9 @@ function faireAvencerLeSnake(){
     const snakeMangePomme = snake[0].x === pommeX && snake[0].y === pommeY;
 
     if(snakeMangePomme){
+        score += 10;
+        document.getElementById('score').innerHTML = score;
+
         creerPomme();
     } else {
         snake.pop();
@@ -147,4 +150,19 @@ function dessinePomme(){
     ctx.stroke();
 
 }
+
+function finDuJeu(){
+
+    let snakeSansTete = snake.slice(1, -1);
+    let morudu = false;
+    snakeSansTete.forEach(morceau => {
+        if(morceau.x === snake[0].x && morceau.y === snake[0].y){
+            mordu = true;
+        }
+    })
+
+
+    return mordu;
+}
+
 
