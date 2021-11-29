@@ -1,53 +1,58 @@
-const canvas  = document.getElementById('canvas');
-const ctx = canvas .getContext('2d');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
+// Variables
 
-
-//Variables
-
-//Vitesses sur X
-vx = 0;
-
-//vitesse sur Y
-vy = -10;
-//pommeX
+// Vitesse sur X
+vx = 10;
+// Vitesse sur Y
+vy = 0;
+// pommeX
 let pommeX = 0;
-//pommeY
+// pommeY
 let pommeY = 0;
-//score 
+// Score
 let score = 0;
+// bugDirection
+let bugDirection = false;
+// StopGame
+let stopGame = false;
+
 
 let snake = [ {x:140, y:150}, {x:130, y:150}, {x:120, y:150}, {x:110, y:150} ]
 
 function animation(){
 
-    setTimeout(function(){
+    if(stopGame === true) {
+        return;
+    } else {
 
-        nettoieCanvas();
+        setTimeout(function(){
+            bugDirection = false;
+            nettoieCanvas();
+            dessinePomme();
+            faireAvancerSerpent();
+    
+            dessineLeSerpent();
+    
+            // recursion
+            animation();
+    
+        }, 100);
 
-        faireAvencerLeSnake();
+    }
 
-        dessineLeSnake();
-        // animation du snake
-        animation();
-
-        dessinePomme();
-
-    }, 100);
 
 }
-
 animation();
+creerPomme();
 
 function nettoieCanvas(){
-
     ctx.fillStyle = "white";
     ctx.strokeStyle = "black";
     ctx.fillRect(0,0,canvas.width, canvas.height);
     ctx.strokeRect(0,0,canvas.width, canvas.height);
-    
 }
-
 
 function dessineLesMorceaux(morceau) {
 
@@ -57,24 +62,28 @@ function dessineLesMorceaux(morceau) {
     ctx.strokeRect(morceau.x, morceau.y, 10, 10);
 
 }
-
-function dessineLeSnake(){
+function dessineLeSerpent(){
     snake.forEach(morceau => {
         dessineLesMorceaux(morceau);
     })
 }
 
 
-
-function faireAvencerLeSnake(){
+function faireAvancerSerpent() {
 
     const head = {x: snake[0].x + vx, y: snake[0].y + vy};
     snake.unshift(head);
+
+    if(finDuJeu()){
+        snake.shift(head);
+        recommencer();
+        stopGame = true;
+        return;
+    }
     
+    const serpentMangePomme = snake[0].x === pommeX && snake[0].y === pommeY;
 
-    const snakeMangePomme = snake[0].x === pommeX && snake[0].y === pommeY;
-
-    if(snakeMangePomme){
+    if(serpentMangePomme) {
         score += 10;
         document.getElementById('score').innerHTML = score;
 
@@ -83,14 +92,19 @@ function faireAvencerLeSnake(){
         snake.pop();
     }
 
+
 }
 
-dessineLeSnake();
+dessineLeSerpent();
 
 document.addEventListener('keydown', changerDirection);
 
 function changerDirection(event) {
-    console.log(event);
+    // console.log(event);
+
+    // eviter le bug
+    if(bugDirection) return;
+    bugDirection = true;
 
     const FLECHE_GAUCHE = 37;
     const FLECHE_DROITE = 39;
@@ -99,19 +113,19 @@ function changerDirection(event) {
 
     const direction = event.keyCode;
 
-    const monter = vy === 10;
-    const descendre = vy === -10;
+    const monter = vy === -10;
+    const descendre = vy === 10;
     const adroite = vx === 10;
     const agauche = vx === -10;
 
+    // mouvement
     if(direction === FLECHE_GAUCHE && !adroite) { vx = -10; vy = 0; }
     if(direction === FLECHE_ENHAUT && !descendre) { vx = 0; vy = -10; }
     if(direction === FLECHE_DROITE && !agauche) { vx = 10; vy = 0; }
     if(direction === FLECHE_ENBAS && !monter) { vx = 0; vy = 10; }
 
-
+    
 }
-
 
 function random(){
 
@@ -127,23 +141,20 @@ function creerPomme(){
 
     snake.forEach(function(part){
 
-        const snakeSurPomme = part.x == pommeX && part.y == pommeY;
+        const serpentSurPomme = part.x == pommeX && part.y == pommeY;
 
-        if(snakeSurPomme) {
+        if(serpentSurPomme) {
             creerPomme();
         }
 
     })
-
+    
 }
-
-creerPomme();
 
 function dessinePomme(){
 
     ctx.fillStyle = 'red';
-    ctx.strokeStyle = 'black';
-    ctx.fillRect(pommeX, pommeY, 10, 10);
+    ctx.strokeStyle = "darkred";
     ctx.beginPath();
     ctx.arc(pommeX + 5, pommeY + 5, 5, 0, 2 * Math.PI);
     ctx.fill();
@@ -151,18 +162,39 @@ function dessinePomme(){
 
 }
 
-function finDuJeu(){
+function finDuJeu() {
 
-    let snakeSansTete = snake.slice(1, -1);
-    let morudu = false;
+    let snakeSansTete = snake.slice(1,-1);
+    let mordu = false;
     snakeSansTete.forEach(morceau => {
         if(morceau.x === snake[0].x && morceau.y === snake[0].y){
             mordu = true;
         }
     })
 
+    const toucheMurGauche = snake[0].x < -1;
+    const toucheMurDroite = snake[0].x > canvas.width - 10;
+    const toucheMurTop = snake[0].y < -1;
+    const toucheMurBottom = snake[0].y > canvas.height - 10;
 
-    return mordu;
+    let gameOver = false;
+
+    if(mordu || toucheMurGauche || toucheMurDroite || toucheMurTop || toucheMurBottom) {
+        gameOver = true;
+    }
+    
+
+    return gameOver;
 }
 
+function recommencer(){
+    const restart = document.getElementById('recommencer');
+    restart.style.display = "block";
 
+    document.addEventListener('keydown', (e) => {
+        if(e.keyCode === 32) {
+            document.location.reload(true);
+        }
+    })
+
+}
